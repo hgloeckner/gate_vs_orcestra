@@ -70,7 +70,6 @@ def open_radiosondes(cid):
                 "flight_lat": "latitude",
                 "flight_lon": "longitude",
                 "platform": "platform_id",
-                "bin_average_time": "time_since_launch",
             }
         )
         .reset_coords(["p", "latitude", "longitude", "bin_average_time", "sonde_id"])
