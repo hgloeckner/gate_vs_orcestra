@@ -29,7 +29,7 @@ datasets["orcestra"] = xr.concat(
 
 for name, ds in datasets.items():
     datasets[name] = (
-        ds.pipe(pp.interpolate_gaps).pipe(pp.extrapolate_sfc).pipe(pp.sel_gate_A)
+        ds.pipe(pp.interpolate_gaps).pipe(pp.extrapolate_sfc).pipe(pp.sel_percusion_E)
     )
 
 # %%
