@@ -4,7 +4,7 @@ colors = {
     "rapsodi": "navy",
     "beach": "teal",
     "gate": "orangered",
-    "orcestra": "#6d88bc",
+    "orcestra": "royalblue",
     "jra3q": "#435D00",
     "merra2": "#6C9600",
     "era5": "#98D500",
