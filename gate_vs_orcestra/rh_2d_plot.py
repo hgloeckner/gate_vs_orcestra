@@ -371,9 +371,17 @@ ax.annotate(
 )
 ax.set_ylim(0, 0.218)
 ax.legend(fontsize=8)
-ax.set_yticks(ticks=np.arange(0, 0.2, 0.05))
+ax.set_yticks(ticks=np.arange(0, 0.2, 0.08))
 ax.spines["left"].set_bounds(-0.0, 0.19)
 
+ax.set_ylabel("prob. density")
+ax.set_xticks(
+    [
+        40.0,
+        np.round(iwv["gate"].iwv.median(), 1),
+        np.round(iwv["orcestra"].iwv.median(), 1),
+    ]
+)
 
 sns.despine(offset={"bottom": 10})
 fig.savefig(
