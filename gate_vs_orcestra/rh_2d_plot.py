@@ -377,7 +377,7 @@ ax.spines["left"].set_bounds(-0.0, 0.19)
 
 sns.despine(offset={"bottom": 10})
 fig.savefig(
-    "images/rh_histograms.pdf",
+    "plots/rh_histograms.pdf",
     bbox_inches="tight",
 )
 
@@ -405,5 +405,5 @@ ax.set_xlabel("Relative humidity")
 ax.set_ylabel("Temperature / K")
 sns.despine(offset=10)
 fig.savefig(
-    "images/total_vs_clear_sky.pdf",
+    "plots/total_vs_clear_sky.pdf",
 )
