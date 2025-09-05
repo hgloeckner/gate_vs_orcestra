@@ -229,7 +229,7 @@ bbox_args = dict(boxstyle="round", fc="white", alpha=0.3)
 for ax in [axes["left"], axes["right"]]:
     ax.set_ylabel("")
     ax.invert_yaxis()
-    ax.set_xlabel("Relative humidity")
+    ax.set_xlabel("RH / 1")
     ax.axhline(273.15, color="k", linestyle="--")
     ax.plot(
         ice_line.values,
@@ -273,7 +273,7 @@ for ax in [axes["left"], axes["right"]]:
         bbox=bbox_args,
     )
 axes["left"].legend(loc=3)
-axes["left"].set_ylabel("Temperature / K")
+axes["left"].set_ylabel("$T$ / K")
 axes["left"].set_xlim(0, 1.05)
 axes["left"].set_ylim(None, 220)
 
@@ -401,8 +401,8 @@ for name, color_idx in [("orcestra", 0), ("gate", 4)]:
 
 ax.invert_yaxis()
 ax.legend(loc="upper right", fontsize=12)
-ax.set_xlabel("Relative humidity")
-ax.set_ylabel("Temperature / K")
+ax.set_xlabel("RH / 1")
+ax.set_ylabel("$T$ / K")
 sns.despine(offset=10)
 fig.savefig(
     "plots/total_vs_clear_sky.pdf",
