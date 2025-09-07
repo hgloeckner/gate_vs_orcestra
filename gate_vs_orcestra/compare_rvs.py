@@ -3,6 +3,7 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 
 import utilities.data_utils as dus
 import utilities.preprocessing as pre
