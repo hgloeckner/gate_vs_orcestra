@@ -339,4 +339,23 @@ sns.despine(offset=10)
 # - the opposite is true for the radiosondes, primarily above 5km
 # It could be good to do the above, but separating out only the ascending radiosondes.  But I also don't see a consistent picture that would lead me to the error, except to note that if I multiply $\chi = R/g$ by 1.02 the dropsondes hydrostatic relationships look perfect. This is the same as multiplying $\mathrm{dln}p$ by 1.02, which seems hard to justify.
 
+# %% [markdown]
+## Simple Example
+# The spread with the group by is easy to understand
+npts = 10000
+hgt1 = np.arange(0, npts)
+dz = (np.random.rand(npts) / 10) ** 2
+hgt2 = np.arange(0, npts, 1.2)
+x = xr.DataArray(
+    data=hgt1 + np.random.rand(npts) ** 2,
+    dims=[
+        "z",
+    ],
+    coords={"z": hgt1},
+)
+dx = x.groupby_bins("z", hgt2).mean().diff(dim="z_bins")
+dx.plot.hist(bins=30, label=f"{1.2 - dx.quantile(0.5).values:.2f}")
+sns.despine(offset=10)
+plt.legend()
+
 # %%
