@@ -1,6 +1,6 @@
 # %% [markdown]
 ## Quality control of sonde data
-# Select just the Meteor circle or the whole day.  Doing so doesn't make a difference, the closer comparision is actually worse. It suggests that on this day the radio sondes measure colder temperatures, by about 1 K, than either HALO or the dropsondes
+# Select different regions for analysis and see if there seems to be systematic variations. The picture is broadly consisten
 
 import xarray as xr
 import numpy as np
@@ -15,6 +15,7 @@ from utilities.settings_and_colors import colors, percusion_E
 
 cids = dus.get_cids()
 colors["halo"] = "red"
+g = mtc.gravity_earth
 
 setup = {
     "september-3-percusion_e": {
@@ -30,7 +31,7 @@ setup = {
     "east": {
         "area": percusion_E,
         "days": slice("2024-08-10", "2024-09-06"),
-        "alts": slice(14300, 14500),
+        "alts": slice(13800, 14000),
     },
     "west": {
         "area": np.array([[-61.0, 5.0], [-40.0, 5.0], [-40.0, 15.0], [-61.0, 15.0]]),
@@ -48,20 +49,8 @@ alts2 = slice(12000, 12100)
 sns.set_context("paper")
 
 for key, coords in setup.items():
-    domain = "september-3-meteor"
     halo = (
-        xr.open_dataset(
-            "ipfs://bafybeif52irmuurpb27cujwpqhtbg5w6maw4d7zppg2lqgpew25gs5eczm",
-            engine="zarr",
-        )
-        .rename_vars(
-            {
-                "IRS_LAT": "latitude",
-                "IRS_LON": "longitude",
-                "IRS_ALT": "altitude",
-            }
-        )
-        .set_coords(({"latitude", "longitude", "altitude"}))
+        dus.open_halo()
         .pipe(
             pre.sel_sub_domain,
             coords["area"],
@@ -125,7 +114,7 @@ for key, coords in setup.items():
 
     halo.altitude.plot.hist(
         ax=axs[1, 0],
-        bins=np.arange(12500, 15000, 50),
+        bins=np.arange(coords["alts"].start, coords["alts"].stop, 5),
         density=True,
         color=colors["halo"],
     )
@@ -163,10 +152,9 @@ for key, coords in setup.items():
     fig.suptitle(key, fontsize=14)
     fig.tight_layout()
 
-
 # %% [markdown]
 ## Radiosonde Diel Cycle
-# compare sondes near the overpass at 30W, which would have been about 14 local time, or 16 UTC
+# Compare sondes in the percusion_E area.  At 30W, an overpass would have been at 16 UTC
 raps = (
     dus.open_radiosondes(cids["radiosondes"])
     .pipe(pre.sel_sub_domain, percusion_E)
@@ -174,41 +162,33 @@ raps = (
     .sel(altitude=slice(12000, 12100))
 )
 
-day_mask = (raps.launch_time.dt.hour > 12) & (raps.launch_time.dt.hour < 18)
+day_mask = (raps.launch_time.dt.hour > 14) & (raps.launch_time.dt.hour < 18)
 raps_day = raps.where(day_mask, drop=True).ta
+raps_all = raps.ta
 
-ngt_mask = raps.launch_time.dt.hour < 6
-raps_ngt = raps.where(ngt_mask, drop=True).ta
-
-raps_ngt.plot.hist(bins=30, alpha=0.5, density=True)
+raps_all.plot.hist(bins=30, alpha=0.5, density=True)
 raps_day.plot.hist(bins=30, alpha=0.5, density=True)
-plt.gca().set_xticks([raps_ngt.quantile(0.5), raps_day.quantile(0.5)], minor=True)
-print(
-    f"Day night difference {(raps_day.quantile(0.5) - raps_ngt.quantile(0.5)).values:.2f} K"
-)
+plt.gca().set_xticks([raps_all.quantile(0.5), raps_day.quantile(0.5)], minor=True)
+print(f"Daytime bias {(raps_day.quantile(0.5) - raps_all.quantile(0.5)).values:.2f} K")
 sns.despine(offset=5)
 
 # %% [markdown]
-## Pressure differences
-# compare pressure in radio and dropsondes at the same height level
+## Differences at common heights
+# compare radiosondes and dropsondes at 12km
+
 raps = (
     dus.open_radiosondes(cids["radiosondes"])
     .pipe(pre.sel_sub_domain, percusion_E)
     .swap_dims({"sonde": "launch_time"})
     .sel(altitude=slice(12000, 12100))
 )
+
 drps = (
     dus.open_dropsondes(cids["dropsondes"])
     .pipe(pre.sel_sub_domain, percusion_E)
     .swap_dims({"sonde": "launch_time"})
     .sel(altitude=slice(12000, 12100))
 )
-
-day_mask = (raps.launch_time.dt.hour > 12) & (raps.launch_time.dt.hour < 18)
-raps_day = raps.where(day_mask, drop=True).p
-
-ngt_mask = raps.launch_time.dt.hour < 6
-raps_ngt = raps.where(ngt_mask, drop=True).p
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(7, 3))
 
@@ -235,6 +215,63 @@ ax3.set_xticks([raps.theta.quantile(0.5), drps.theta.quantile(0.5)], minor=True)
 ax3.set_xlabel("$\\Theta$ / K")
 print(
     f"--Potential temperature difference: {((drps.theta.quantile(0.5) - raps.theta.quantile(0.5)).values):.2f} K"
+)
+sns.despine(offset=5)
+# %% [markdown]
+## Differences at common heights
+# compare radiosondes and halo at 14km
+
+raps = (
+    dus.open_radiosondes(cids["radiosondes"])
+    .pipe(pre.sel_sub_domain, percusion_E)
+    .swap_dims({"sonde": "launch_time"})
+    .sel(altitude=slice(13800, 14000))
+)
+
+halo = (
+    dus.open_halo()
+    .pipe(
+        pre.sel_sub_domain,
+        percusion_E,
+        item_var="TIME",
+        lon_var="longitude",
+        lat_var="latitude",
+    )
+    .swap_dims({"TIME": "altitude"})
+    .sortby("altitude")
+    .sel(altitude=slice(13800, 14000))
+)
+
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(7, 3))
+
+raps.p.plot.hist(ax=ax1, bins=30, alpha=0.5, density=True, color=colors["rapsodi"])
+(halo.PS * 100).plot.hist(
+    ax=ax1, bins=30, alpha=0.5, density=True, color=colors["halo"]
+)
+ax1.set_xticks([halo.PS.quantile(0.5) * 100, raps.p.quantile(0.5)], minor=True)
+ax1.set_xlabel("$P$ / hPa")
+ax1.set_xlim(15500, 16500)
+print("Distributions at 14 km")
+print(
+    f"--Pressure difference: {((halo.PS.quantile(0.5) * 100 - raps.p.quantile(0.5)).values) / 100:.2f} hPa"
+)
+
+raps.ta.plot.hist(ax=ax2, bins=30, alpha=0.5, density=True, color=colors["rapsodi"])
+halo.TS.plot.hist(ax=ax2, bins=30, alpha=0.5, density=True, color=colors["halo"])
+ax2.set_xticks([halo.TS.quantile(0.5), drps.ta.quantile(0.5)], minor=True)
+ax2.set_xlabel("$T$ / K")
+ax2.set_xlim(205, 215)
+
+print(
+    f"--Temperature difference: {((halo.TS.quantile(0.5) - raps.ta.quantile(0.5)).values):.2f} K"
+)
+
+raps.theta.plot.hist(ax=ax3, bins=30, alpha=0.5, density=True, color=colors["rapsodi"])
+halo.THETA.plot.hist(ax=ax3, bins=30, alpha=0.5, density=True, color=colors["halo"])
+ax3.set_xticks([halo.THETA.quantile(0.5), halo.THETA.quantile(0.5)], minor=True)
+ax3.set_xlabel("$\\Theta$ / K")
+print(
+    f"--Potential temperature difference: {((halo.THETA.quantile(0.5) - raps.theta.quantile(0.5)).values):.2f} K"
 )
 sns.despine(offset=5)
 
@@ -266,7 +303,7 @@ for key, dx in datasets.items():
     gamma = ds.ta.diff(dim="altitude", label="lower") / 10.0
     q = 0.5 * ds.ta.diff(dim="altitude", label="lower") + ds.q
     R = mtc.Rd + (mtc.Rv - mtc.Rd) * q
-    chi = R / mtc.gravity_earth
+    chi = R / g
     dlnp = np.log(ds.p).diff(dim="altitude", label="lower")
     dZ[key] = (ds.ta[:-1] / gamma * (np.exp(-chi * gamma * dlnp) - 1)).sel(
         altitude=slice(None, 12000)
@@ -302,7 +339,7 @@ for key, dx in datasets.items():
     gamma = ds.ta.diff(dim="altitude", label="lower") / 10
     q = 0.5 * ds.ta.diff(dim="altitude", label="lower") + ds.q
     R = mtc.Rd + (mtc.Rv - mtc.Rd) * q
-    chi = R / mtc.gravity_earth
+    chi = R / g
     dP[key] = (
         -ds.p[:-1]
         * (np.exp(np.log(10 * gamma / ds.ta[:-1] + 1) / (chi * gamma)) - 1)
@@ -329,33 +366,42 @@ ax2.set_ylabel("$(P-p)$ / hPa")
 ax1.legend(fontsize=8, loc="upper left")
 sns.despine(offset=10)
 # %% [markdown]
-## Summary
-# What I think I learned was that
-# - the radiosondes are a bit colder than the aircraft and the dropsondes at the same height
-# - some of this difference, but I don't think all, can be the diurnal cycle
-# - at 12 km the radiosondes measure lower (2 hPa) pressure than the dropsondes
-# - this lower pressure compensates for the colder sondes, i.e., differences in $\theta$ are smaller
-# - the hydrostatic altitude of the dropsondes doesn't increase as much as the altitude
-# - the opposite is true for the radiosondes, primarily above 5km
-# It could be good to do the above, but separating out only the ascending radiosondes.  But I also don't see a consistent picture that would lead me to the error, except to note that if I multiply $\chi = R/g$ by 1.02 the dropsondes hydrostatic relationships look perfect. This is the same as multiplying $\mathrm{dln}p$ by 1.02, which seems hard to justify.
-
-# %% [markdown]
 ## Simple Example
-# The spread with the group by is easy to understand
-npts = 10000
-hgt1 = np.arange(0, npts)
-dz = (np.random.rand(npts) / 10) ** 2
-hgt2 = np.arange(0, npts, 1.2)
-x = xr.DataArray(
-    data=hgt1 + np.random.rand(npts) ** 2,
+# illustrates how grouping gives more spread in observed values
+
+zmax = 10000.0
+dz_obs = 8.0
+dz_bin = 10
+hgt = np.arange(0, zmax, dz_obs)
+hgt_obs = hgt + np.random.rand(len(hgt)) * dz_obs / 5
+hgt_bin = np.arange(0, zmax, dz_bin)
+z = xr.DataArray(
+    hgt_obs,
     dims=[
         "z",
     ],
-    coords={"z": hgt1},
+    coords={"z": hgt},
 )
-dx = x.groupby_bins("z", hgt2).mean().diff(dim="z_bins")
-dx.plot.hist(bins=30, label=f"{1.2 - dx.quantile(0.5).values:.2f}")
+dz = z.groupby_bins("z", hgt_bin).mean().diff(dim="z_bins")
+dz.plot.hist(bins=30)  # , label=f"{1.0 - dx.quantile(0.5).values:.2f}")
 sns.despine(offset=10)
-plt.legend()
-
 # %%
+gamma = 8e-3
+dz_12 = 225 / gamma * (np.exp(mtc.Rd / g * gamma * np.log(21570 / 21375)) - 1)
+dz_14 = 211 / gamma * (np.exp(mtc.Rd / g * gamma * np.log(16300 / 16125)) - 1)
+print(
+    f"effective height differences between radisondes and:\n dropsondes {dz_12:.2f} m\n halo {dz_14:.2f} m"
+)
+
+# %% [markdown]
+## Summary
+# What I think I learned was that
+# - the radiosondes are a bit colder than the aircraft and the dropsondes at the same height
+# - some of this difference, maybe 1/3 can be attributed to the diurnal cycle
+# - at 12 km the radiosondes measure lower (2 hPa) pressure than the dropsondes, similar to halo radio sondes at 14 km.  At this height this corresponds to a hdyrostatic pressure difference of about 50m
+# - this lower pressure compensates for the colder sondes, i.e., differences in $\theta$ are smaller
+# - integrating hydrostatically would accumulate much larger height/pressure differences than are actually observed at altitude
+# - errors in estimate pressures are expected due to the binning, but the bias is more systematic (and hence the accumulation larger) than I would have expected.
+# - not shown but I compared radio and dropsondes at 200m - 300m.  The dropsondes were 0.2 K warmer (diurnal?) and pressure was 0.25 hPa lower
+# - there is the semi-diurnal tide, maybe this explains some of the difference?
+# Based on this I have the feeling that things are broadly okay, but that even after accounting for diurnal effects the radiosondes are a bit cold, or their altitude is a bit under-estimated.  If they were mapped to the dropsonde altitude at the same pressure the cold bias would largely vanish.
