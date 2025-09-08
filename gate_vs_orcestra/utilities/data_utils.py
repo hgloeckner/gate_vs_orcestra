@@ -2,6 +2,7 @@ import intake
 import hashlib
 import numpy as np
 import xarray as xr
+import fsspec
 
 variable_attribute_dict = {
     "ta": {
@@ -126,3 +127,15 @@ def open_halo(cid=get_cids()["halo"]):
             "IRS_ALT": "altitude",
         }
     ).set_coords(({"latitude", "longitude", "altitude"}))
+
+
+def fsglob(pattern):
+    schema = pattern.split(":")[0]
+    fs = fsspec.filesystem(schema)
+    return fs.glob(pattern)
+
+
+def fsls(path):
+    schema = path.split(":")[0]
+    fs = fsspec.filesystem(schema)
+    return fs.ls(path, detail=False)
