@@ -106,6 +106,7 @@ def get_cids():
         "orcestra": orcestra_main,
         "radiosondes": f"{orcestra_main}/Radiosondes/RAPSODI_RS_ORCESTRA_level2.zarr",
         "dropsondes": f"{orcestra_main}/HALO/dropsondes/Level_3/PERCUSION_Level_3.zarr",
+        "halo": "bafybeif52irmuurpb27cujwpqhtbg5w6maw4d7zppg2lqgpew25gs5eczm",
     }
 
 
@@ -114,3 +115,14 @@ def summarize_platforms(gate: xr.Dataset):
     print(f"Platforms in dataset: {len(unique_platforms)}")
     for platform, n in zip(unique_platforms, counts):
         print(f"{platform:10s} : {n:5d} sondes")
+
+
+def open_halo(cid=get_cids()["halo"]):
+    ds = xr.open_dataset(f"ipfs://{cid}", engine="zarr")
+    return ds.rename_vars(
+        {
+            "IRS_LAT": "latitude",
+            "IRS_LON": "longitude",
+            "IRS_ALT": "altitude",
+        }
+    ).set_coords(({"latitude", "longitude", "altitude"}))
