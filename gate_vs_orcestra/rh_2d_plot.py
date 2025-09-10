@@ -288,7 +288,8 @@ for name, label in [
 ]:
     sns.histplot(
         data=iwv[name].iwv,
-        bins=30,
+        bins=40,
+        binrange=(32, 73),
         element="step",
         stat="density",
         label=label,
