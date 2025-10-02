@@ -90,3 +90,23 @@ ax.set_extent([-67, -10, -2, 22], crs=ccrs.PlateCarree())
 egh.healpix_show(reanalysis_sfc["JRA3Q"].mean("year"), ax=ax, cmap=cmocean.cm.thermal)
 ax.add_feature(cf.COASTLINE, linewidth=0.8)
 ax.add_feature(cf.BORDERS, linewidth=0.4)
+
+# %%
+ds = reanalysis_sfc["BEST"].to_dataframe()
+# %%
+
+fig, ax = plt.subplots(figsize=(16, 9))
+sns.barplot(
+    x=ds.index,
+    y=1,
+    hue=ds.temperature,
+    palette="RdBu_r",
+    linewidth=0,
+    edgecolor=None,
+    width=1,
+    fill=True,
+    legend=False,
+)
+ax.set_axis_off()
+plt.margins(0, 0)
+fig.savefig("images/berkeley_sfc_temperature.pdf", bbox_inches="tight", pad_inches=0)
