@@ -1,3 +1,4 @@
+# %%
 import tempfile
 
 import konrad
@@ -172,11 +173,11 @@ gate_co2 = 303.5e-6
 gate = run_rce(co2=gate_co2, o3="gate", sst=300.0)
 
 # ORCESTRA
-orcestra_co2 = 422.8e-6
+orcestra_co2 = 607e-6  # 422.8e-6
 orcestra_co2_e = (
     np.exp(1.5 * np.log(orcestra_co2 / gate_co2)) * gate_co2
 )  # CO2 equivalent forcing
-orcestra = run_rce(co2=orcestra_co2_e, o3="orcestra", sst=301.3)
+orcestra = run_rce(co2=orcestra_co2_e, o3="orcestra", sst=305)
 
 
 fig, ax = plot_comparison(gate, orcestra)
@@ -184,3 +185,127 @@ fig.savefig("gate_vs_orcestra_rce.png")
 
 
 print_changes(gate, orcestra)
+
+# %%
+
+
+gateT = gate.isel(time=-1).swap_dims({"plev": "z"})
+orcestraT = orcestra.isel(time=-1).swap_dims({"plev": "z"})
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# %%
+sns.set_context("talk", font_scale=0.8)
+fig, ax = plt.subplots(figsize=(6, 5))
+gateT.T.sel(z=slice(0, 30000)).plot(
+    y="z", ax=ax, label=r"$T_{{\text{{sfc}}}} = {}$K".format(int(300))
+)
+orcestraT.T.sel(z=slice(0, 30000)).plot(
+    y="z", ax=ax, label=r"$T_{{\text{{sfc}}}} = {}$K".format(int(305))
+)
+yticks = [0, 10000, 30000]
+xticks = [200, 273.15, 300]
+yticks = yticks
+
+ax.set_xlim(200, None)
+
+for alt in [2000, 10000, 25000]:
+    alt_cold = ax.transLimits.transform(
+        (float(gateT.T.sel(z=alt, method="nearest").values), alt)
+    )[0]
+    y = ax.transLimits.transform(
+        (float(gateT.T.sel(z=alt, method="nearest").values), alt + 300)
+    )[1]
+    alt_warm = ax.transLimits.transform(
+        (float(orcestraT.T.sel(z=alt, method="nearest").values), alt)
+    )[0]
+    if alt < 20000:
+        alt_fix = alt_warm
+        ha = "left"
+    else:
+        alt_fix = alt_cold - 0.05
+        ha = "right"
+    ax.annotate(
+        r"$\Delta T_{{{} \text{{km}}}}$".format(alt // 1000),
+        xy=(alt_fix, y),
+        fontsize=12,
+        ha=ha,
+        color="white",
+        xycoords="axes fraction",
+    )
+    """
+    ax.axhline(
+        alt,
+        alt_cold,
+        alt_warm,
+        ls="--",
+        c="k",
+    )
+    
+    
+for r in [gateT, orcestraT]:
+    triple = r.where(np.abs(r.T - 273.15) == np.min(np.abs(r.T - 273.15)), drop=True).z
+    t_low = ax.transLimits.transform((273.15 - 2, float(triple.values)))[0]
+    t_alt = ax.transLimits.transform((273.15 + 14, float(triple.values) - 200))
+    t_high = ax.transLimits.transform((273.15 + 8, float(triple.values)))[0]
+    ax.axhline(
+        triple,
+        t_low,
+        t_high,
+        ls=":",
+        c="k",
+    )
+    ax.annotate(
+        r"$z_0$",
+        xy=t_alt,
+        xycoords="axes fraction",
+        fontsize=12,
+        ha="right",
+    )
+    minor_y.append(float(triple.values))
+
+for r in [gate, orcestra]:
+    cp = r["cold_point_height"].values
+    ax.axhline(
+        cp,
+        ax.transLimits.transform((215, float(cp)))[0],
+        ax.transLimits.transform((215 - 7, float(cp)))[0],
+        color="k",
+        linestyle=":",
+    )
+    ax.annotate(
+        r"$z_{\text{cp}}$",
+        xy=(202, cp - 150),
+        xycoords="data",
+        fontsize=12,
+        ha="left",
+        va="center",
+    )
+    ct = r["convective_top_height"][-1].values
+    ax.axhline(
+        ct,
+        ax.transLimits.transform((221, float(ct)))[0],
+        ax.transLimits.transform((221 + 9, float(ct)))[0],
+        color="k",
+        linestyle=":",
+    )
+    ax.annotate(
+        r"$z_{\text{ct}}$",
+        xy=(230, ct - 10),
+        xycoords="data",
+        fontsize=12,
+        ha="left",
+        va="center",
+    )
+    """
+ax.set_ylabel("altitude / km")
+ax.set_xlabel("air temperature / K")
+for axis in ["top", "bottom", "left", "right"]:
+    ax.spines[axis].set_linewidth(1)
+ax.tick_params(width=0.5, which="both")
+ax.set_yticks(yticks, labels=[f"{y / 1000:.1f}" for y in yticks])
+ax.set_xticks(xticks)
+
+ax.legend()
+sns.despine(offset={"left": 10})
+fig.savefig("plots/moist_adiabat_ex_empty.pdf", bbox_inches="tight")
