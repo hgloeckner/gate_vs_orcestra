@@ -219,7 +219,7 @@ ax.annotate(
     fontsize=10,
     ha="center",
     va="bottom",
-    arrowprops=dict(arrowstyle="-[, widthB=3.5, lengthB=.1", lw=2.0),
+    arrowprops=dict(arrowstyle="-[, widthB=4, lengthB=.1", lw=2.0),
 )
 mean_campaigns = (iwv["orcestra"].iwv.median() + iwv["gate"].iwv.median()).values / 2
 diff_campaigns = iwv["orcestra"].iwv.median() - iwv["gate"].iwv.median()
@@ -466,7 +466,7 @@ fig.savefig(
 )
 # %%
 fig, ax = plt.subplots(
-    figsize=(cw, cw),
+    figsize=(cw * 0.3, cw * 0.75 * 0.7),
 )
 (
     (ta_datasets["orcestra"].mean("sonde").rh - ta_datasets["gate"].mean("sonde").rh)
@@ -479,12 +479,20 @@ fig, ax = plt.subplots(
     ax=ax,
 )
 ax.invert_yaxis()
-ax.set_xlabel("RH change / % K$^{-1}$ sfc warming")
-ax.set_ylabel("$T$ / K")
-yticks = [300, 280, 270, 260, 240, 220]
-ax.set_yticks(yticks, labels=yticks)
+ax.set_xlabel("RH change / % K$^{-1}$")
+ax.set_ylabel("")
+yticks = [300, 273, 250, 220]
+ax.set_yticks(yticks, labels=[])
+for axis in ["top", "bottom", "left", "right"]:
+    ax.spines[axis].set_linewidth(1)
+ax.tick_params(width=0.5, which="both")
 ax.axvline(0, color="k", linestyle="--", linewidth=1, alpha=0.5)
 sns.despine(offset=10)
+
+fig.savefig(
+    "plots/rh_difference.pdf",
+    bbox_inches="tight",
+)
 # %%
 pltcolors = sns.color_palette("Paired", n_colors=8)
 cs_threshold = 0.98
