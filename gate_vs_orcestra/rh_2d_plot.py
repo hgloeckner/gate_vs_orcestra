@@ -26,9 +26,6 @@ for name, ds in datasets.items():
         ds.pipe(pp.interpolate_gaps).pipe(pp.extrapolate_sfc).pipe(pp.sel_percusion_E)
     )
 # %%
-datasets["rapsodi"] = datasets["rapsodi"].where(
-    datasets["rapsodi"].ascent_flag == 0, drop=True
-)
 datasets["orcestra"] = xr.concat(
     [datasets["rapsodi"], datasets["beach"]],
     dim="sonde",
