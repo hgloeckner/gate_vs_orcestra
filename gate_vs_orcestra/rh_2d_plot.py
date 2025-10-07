@@ -74,10 +74,10 @@ for name, ds in datasets.items():
         ta_bin_num=ta_bin_num,
     )
 
-# %%
+# %% additional lines for RH-T plot
 
 
-es_liq = svp.liq_wagner_pruss
+es_liq = svp.liq_hardy  # liq_wagner_pruss
 es_ice = svp.ice_wagner_etal
 es_mixed = mtf.make_es_mxd(es_liq=es_liq, es_ice=es_ice)
 
