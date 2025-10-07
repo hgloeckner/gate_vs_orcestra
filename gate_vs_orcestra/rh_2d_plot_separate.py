@@ -71,42 +71,89 @@ gate_sfc = datasets["gate"].sel(altitude=0).mean("sonde")
 orc_pseudo = thermo.make_sounding_from_adiabat(
     P, orc_sfc.ta.values, orc_sfc.q.values, thx=mtf.theta_e_bolton
 ).rename({"T": "ta", "P": "p"})
+orc_pseudo = orc_pseudo.where(orc_pseudo.ta > 200, drop=True)
 gate_pseudo = thermo.make_sounding_from_adiabat(
     P, gate_sfc.ta.values, gate_sfc.q.values, thx=mtf.theta_e_bolton
 ).rename({"T": "ta", "P": "p"})
+gate_pseudo = gate_pseudo.where(gate_pseudo.ta > 200, drop=True)
+
+
 # %%
-rh_orc = (
-    datasets["orcestra"]
-    .mean(dim="sonde")
-    .swap_dims({"altitude": "p"})
-    .dropna(dim="p", how="any", subset=["p"])
-    .rh.interp(p=P)
-)
+def get_rh(datasets, rhname, pseudo_ds):
+    mean_ta = datasets[rhname].mean(dim="sonde").dropna(dim="altitude", subset=["ta"])
+    _, idx = np.unique(mean_ta.ta, return_index=True)
+    lcl = (
+        pseudo_ds.swap_dims({"altitude": "p"})
+        .sel(
+            p=mtf.plcl_bolton(
+                mean_ta.ta.sel(altitude=0),
+                mean_ta.p.sel(altitude=0),
+                mean_ta.q.sel(altitude=0),
+            ),
+            method="nearest",
+        )
+        .altitude
+    )
+    return xr.concat(
+        [
+            mean_ta.rh.interp(
+                altitude=pseudo_ds.altitude.sel(altitude=slice(None, lcl))
+            ).isel(altitude=slice(0, -1)),
+            (
+                mean_ta.isel(altitude=idx)
+                .swap_dims({"altitude": "ta"})
+                .rh.interp(ta=pseudo_ds.ta.values)
+                .to_dataset()
+                .assign(
+                    altitude=("ta", pseudo_ds.altitude.values),
+                )
+                .swap_dims({"ta": "altitude"})
+                .sel(altitude=slice(lcl, None))
+                .reset_coords("ta")
+                .rh
+            ),
+        ],
+        dim="altitude",
+    )
 
-q_gate = mtf.relative_humidity_to_specific_humidity(
-    RH=rh_orc,
-    p=P,
-    T=gate_pseudo.ta.swap_dims({"altitude": "p"}),
-)
-gate_pseudo = calc_iwv(gate_pseudo.assign(q=("altitude", q_gate.values)))
-q_orc = mtf.relative_humidity_to_specific_humidity(
-    RH=rh_orc,
-    p=P,
-    T=orc_pseudo.ta.swap_dims({"altitude": "p"}),
-)
-orc_pseudo = calc_iwv(orc_pseudo.assign(q=("altitude", q_orc.values)))
 
+ref_rh = "orcestra"
+gate_pseudo = gate_pseudo.assign(
+    rh=("altitude", get_rh(datasets, ref_rh, gate_pseudo).values)
+).sel(altitude=slice(0, 11500))
+orc_pseudo = orc_pseudo.assign(
+    rh=("altitude", get_rh(datasets, ref_rh, orc_pseudo).values)
+).sel(altitude=slice(0, 11500))
+# %%
+(ta_datasets["orcestra"].mean("sonde").rh - ta_datasets["gate"].mean("sonde").rh)
+# %%
+gate_pseudo = calc_iwv(
+    gate_pseudo.assign(
+        q=mtf.relative_humidity_to_specific_humidity(
+            RH=gate_pseudo.rh,
+            p=gate_pseudo.p,
+            T=gate_pseudo.ta,
+        )
+    )
+)
+orc_pseudo = calc_iwv(
+    orc_pseudo.assign(
+        q=mtf.relative_humidity_to_specific_humidity(
+            RH=orc_pseudo.rh,
+            p=orc_pseudo.p,
+            T=orc_pseudo.ta,
+        )
+    )
+)
 # %%
 
 # %%
 cw = 190 / 25.4
 sns.set_context("talk", font_scale=0.8)
 cs_threshold = 0.95
-
 fig, ax = plt.subplots(
     figsize=(cw, cw * 0.75 * 0.3),
 )
-
 
 for name, label in [
     ("rapsodi", "ORCESTRA-RS"),
