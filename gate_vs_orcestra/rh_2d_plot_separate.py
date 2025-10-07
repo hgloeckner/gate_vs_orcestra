@@ -15,29 +15,19 @@ from utilities.settings_and_colors import colors  # noqa
 # %%
 cids = dus.get_cids()
 datasets = {
-    "rapsodi": dus.open_radiosondes(
-        "QmcQRuqCgLRUVyCXjzmKfRVL34xxnxzL91PWTJSELrtQxa"
-    ),  # data.open_radiosondes(cids["radiosondes"]),
+    "rapsodi": dus.open_radiosondes(cids["radiosondes"]),
     "beach": dus.open_dropsondes(cids["dropsondes"]),
     "gate": dus.open_gate(cids["gate"]),
 }
-
-for name, ds in datasets.items():
-    datasets[name] = (
-        ds.pipe(pp.interpolate_gaps).pipe(pp.extrapolate_sfc).pipe(pp.sel_percusion_E)
-    )
-# %%
-datasets["rapsodi"] = datasets["rapsodi"].where(
-    datasets["rapsodi"].ascent_flag == 0, drop=True
-)
 datasets["orcestra"] = xr.concat(
     [datasets["rapsodi"], datasets["beach"]],
     dim="sonde",
 )
 
-
-# %% get iwv
-#
+for name, ds in datasets.items():
+    datasets[name] = (
+        ds.pipe(pp.interpolate_gaps).pipe(pp.extrapolate_sfc).pipe(pp.sel_percusion_E)
+    )
 
 
 def density_from_q(p, T, q):
