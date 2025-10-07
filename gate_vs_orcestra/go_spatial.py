@@ -31,7 +31,12 @@ bs_GA = dpp.sel_gate_A(bs_PE)
 # - plot geographic distribution of soundings
 #
 cw = 190 / 25.4
-sns.set_context(context="paper")
+sns.set_context(context="talk", font_scale=0.8)
+plt.style.use("./dark.mplstyle")
+line_color = "k"
+face_color = "white"
+small = 3
+big = 6
 fig, ax = plt.subplots(
     figsize=(cw, cw * 2 / 3), subplot_kw={"projection": ccrs.PlateCarree()}
 )
@@ -47,7 +52,7 @@ kwargs = {"transform": ccrs.PlateCarree(), "marker": "o"}
 ax.scatter(
     gs_PE.launch_lon,
     gs_PE.launch_lat,
-    s=1,
+    s=small,
     color=colors["gate"],
     alpha=0.5,
     label=f"GATE (n={ngso})",
@@ -56,7 +61,7 @@ ax.scatter(
 ax.scatter(
     rs_PE.launch_lon,
     rs_PE.launch_lat,
-    s=1,
+    s=small,
     color=colors["rapsodi"],
     alpha=0.5,
     label=f"ORCESTRA (Meteor, n={nrso})",
@@ -65,7 +70,7 @@ ax.scatter(
 ax.scatter(
     bs_PE.launch_lon,
     bs_PE.launch_lat,
-    s=1,
+    s=small,
     color=colors["beach"],
     alpha=0.5,
     label=f"ORCESTRA (HALO, n={nbso})",
@@ -74,7 +79,7 @@ ax.scatter(
 ax.scatter(
     gs_GA.launch_lon,
     gs_GA.launch_lat,
-    s=4,
+    s=big,
     color=colors["gate"],
     alpha=0.5 / 3,
     label=f"GATE (n={ngs})",
@@ -83,7 +88,7 @@ ax.scatter(
 ax.scatter(
     rs_GA.launch_lon,
     rs_GA.launch_lat,
-    s=4,
+    s=big,
     color=colors["rapsodi"],
     alpha=0.5,
     label=f"ORCESTRA (Meteor, n={nrs})",
@@ -92,7 +97,7 @@ ax.scatter(
 ax.scatter(
     bs_GA.launch_lon,
     bs_GA.launch_lat,
-    s=4,
+    s=big,
     color=colors["beach"],
     alpha=0.5,
     label=f"ORCESTRA (HALO, n={nbs})",
@@ -133,11 +138,16 @@ ax.set_xlabel("longitude / $^\\circ$W")
 ax.set_ylabel("latitude / $^\\circ$N")
 
 ax.plot(
-    gate_A[:3, 0], gate_A[:3, 1], color="k", lw=1, ls="solid", label="GATE A/B Array"
+    gate_A[:3, 0],
+    gate_A[:3, 1],
+    color=line_color,
+    lw=1,
+    ls="solid",
+    label="GATE A/B Array",
 )
-ax.plot(gate_A[3:, 0], gate_A[3:, 1], color="k", lw=1, ls="solid")
-ax.plot(percusion_E[:2, 0], percusion_E[:2, 1], color="k", lw=1, ls="solid")
-ax.plot(percusion_E[2:, 0], percusion_E[2:, 1], color="k", lw=1, ls="solid")
+ax.plot(gate_A[3:, 0], gate_A[3:, 1], color=line_color, lw=1, ls="solid")
+ax.plot(percusion_E[:2, 0], percusion_E[:2, 1], color=line_color, lw=1, ls="solid")
+ax.plot(percusion_E[2:, 0], percusion_E[2:, 1], color=line_color, lw=1, ls="solid")
 
 h_g1 = mlines.Line2D(
     [],
@@ -229,16 +239,17 @@ ax.legend(
     loc="upper left",
     framealpha=1,
     handles=[h_g2, h_b2, h_r2, h_p1, h_g1, h_b1, h_r1],
-    fontsize=8,
+    fontsize=10,
+    title_fontsize=12,
+    facecolor=face_color,
 )
 
 xticks = [-34, -27.0, -23.5, -20]
 yticks = [4.5, 8.5, 12.5]
 ax.set_xticks(xticks)
-ax.set_xlabel("longitude / $^\\circ$W")
+ax.set_xlabel("longitude / $^\\circ$W", fontsize=12)
 ax.set_yticks(yticks)
-ax.set_ylabel("latitude / $^\\circ$N")
-
+ax.set_ylabel("latitude / $^\\circ$N", fontsize=12)
 for xlat in [12]:
     ax.scatter(
         [-23],
@@ -255,23 +266,27 @@ ax.annotate(
     "Dakar",
     xy=(-17.467686, 14.716677),
     xytext=(-20.5, 15.5),
-    fontsize=8,
-    color="k",
-    arrowprops=dict(arrowstyle="->", color="k"),
+    fontsize=10,
+    color=line_color,
+    arrowprops=dict(arrowstyle="->", color=line_color),
 )
 
 ax.annotate(
     "Sal",
     xy=(-22.916663, 16.8499966),
     xytext=(-21.5, 17.0),
-    fontsize=8,
-    color="k",
-    arrowprops=dict(arrowstyle="->", color="k"),
+    fontsize=10,
+    color=line_color,
+    arrowprops=dict(arrowstyle="->", color=line_color),
 )
 
-ax.annotate("GATE A/B array", xy=(-20.3, 9.55), fontsize=8)
-ax.annotate("ORCESTRA East", xy=(-35.5, 11.5), fontsize=8)
+ax.annotate("GATE A/B array", xy=(-20.3, 9.55), fontsize=10)
+ax.annotate("ORCESTRA East", xy=(-35.5, 11.5), fontsize=10)
+
+
+ax.tick_params(width=0.5, which="both", colors=line_color)
+
 fig.tight_layout()
-plt.savefig("plots/gate-orcestra-sondes.pdf")
+plt.savefig("plots/gate-orcestra-sondes.pdf", transparent=True)
 
 # %%

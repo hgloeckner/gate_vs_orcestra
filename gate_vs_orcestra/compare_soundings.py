@@ -363,7 +363,10 @@ ylim = (0, 23000)
 delta_T_rs = rs_bar.ta - gs_bar.ta
 delta_T_bs = bs_bar.ta - gs_bar.ta
 
-sns.set_context("paper")
+sns.set_context("talk", font_scale=0.8)
+
+plt.style.use("./dark.mplstyle")
+# sns.set_context("paper")
 fig, ax = plt.subplots(1, 1, figsize=(cw / 2, cw / 2 * 1.333), sharey=True)
 
 delta_T_rs.plot(
@@ -374,7 +377,7 @@ delta_T_bs.sel(altitude=slice(None, 14200)).plot(
 )
 
 delta_pseudo.where(delta_pseudo > 0.1, drop=True).plot(
-    ax=ax, y="altitude", color=colors["rapsodi"], ls="dotted", lw=1
+    ax=ax, y="altitude", color="k", ls="dotted", lw=1.5
 )
 # x = x.where(x > 0.01)
 # x.plot(ax=ax, y="altitude", color="k", ls="dotted", lw=1)
@@ -387,13 +390,13 @@ ax.plot(
     np.asarray([-1, 3.5]),
     np.asarray([z_T0.quantile(0.5), z_T0.quantile(0.5)]),
     color="grey",
-    lw="0.5",
+    lw="1",
     ls="-",
 )
 ax.annotate(
     "$z_0$",
     xy=(-2, z_T0.quantile(0.5)),
-    fontsize=8,
+    fontsize=10,
 )
 
 ax.set_xlabel("$\\Delta T$ / K")
@@ -420,7 +423,7 @@ ax.set_yticks(np.arange(0, 21500, 3000))
 ax.set_yticklabels([0, 3, 6, 9, 12, 15, 18, 21])
 ax.set_yticks([z_T0_gate.quantile(0.5), z_T0.quantile(0.5)], minor=True)
 
-plt.legend(fontsize=8)
+plt.legend(fontsize=10, loc="upper right")
 plt.tight_layout()
 sns.despine(offset={"bottom": 0, "left": 5})
 plt.savefig("plots/DeltaT.pdf")

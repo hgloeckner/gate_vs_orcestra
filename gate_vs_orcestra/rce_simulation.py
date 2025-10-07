@@ -196,19 +196,22 @@ import seaborn as sns
 
 # %%
 sns.set_context("talk", font_scale=0.8)
+
+line_color = "white"
+czero = "blue"
+cone = "orange"
 fig, ax = plt.subplots(figsize=(6, 5))
 gateT.T.sel(z=slice(0, 30000)).plot(
-    y="z", ax=ax, label=r"$T_{{\text{{sfc}}}} = {}$K".format(int(300))
+    y="z", ax=ax, label=r"$T_{{\text{{sfc}}}} = {}$K".format(int(300)), color=czero
 )
 orcestraT.T.sel(z=slice(0, 30000)).plot(
-    y="z", ax=ax, label=r"$T_{{\text{{sfc}}}} = {}$K".format(int(305))
+    y="z", ax=ax, label=r"$T_{{\text{{sfc}}}} = {}$K".format(int(305)), color=cone
 )
 yticks = [0, 10000, 30000]
 xticks = [200, 273.15, 300]
 yticks = yticks
 
 ax.set_xlim(200, None)
-
 for alt in [2000, 10000, 25000]:
     alt_cold = ax.transLimits.transform(
         (float(gateT.T.sel(z=alt, method="nearest").values), alt)
@@ -230,7 +233,7 @@ for alt in [2000, 10000, 25000]:
         xy=(alt_fix, y),
         fontsize=12,
         ha=ha,
-        color="white",
+        color=line_color,
         xycoords="axes fraction",
     )
     """
@@ -239,21 +242,22 @@ for alt in [2000, 10000, 25000]:
         alt_cold,
         alt_warm,
         ls="--",
-        c="k",
+        c=line_color,
     )
-    
-    
-for r in [gateT, orcestraT]:
+    """
+"""
+for r, c in zip([gateT, orcestraT], [czero, cone]):
     triple = r.where(np.abs(r.T - 273.15) == np.min(np.abs(r.T - 273.15)), drop=True).z
     t_low = ax.transLimits.transform((273.15 - 2, float(triple.values)))[0]
-    t_alt = ax.transLimits.transform((273.15 + 14, float(triple.values) - 200))
+    t_alt = ax.transLimits.transform((273.15 + 14, float(triple.values) - 1500))
     t_high = ax.transLimits.transform((273.15 + 8, float(triple.values)))[0]
     ax.axhline(
         triple,
         t_low,
         t_high,
         ls=":",
-        c="k",
+        linewidth=1,
+        c=c,
     )
     ax.annotate(
         r"$z_0$",
@@ -261,17 +265,18 @@ for r in [gateT, orcestraT]:
         xycoords="axes fraction",
         fontsize=12,
         ha="right",
+        color=c,
     )
-    minor_y.append(float(triple.values))
 
-for r in [gate, orcestra]:
+for r, c in zip([gate, orcestra], [czero, cone]):
     cp = r["cold_point_height"].values
     ax.axhline(
         cp,
         ax.transLimits.transform((215, float(cp)))[0],
         ax.transLimits.transform((215 - 7, float(cp)))[0],
-        color="k",
+        color=c,
         linestyle=":",
+        linewidth=1,
     )
     ax.annotate(
         r"$z_{\text{cp}}$",
@@ -280,14 +285,17 @@ for r in [gate, orcestra]:
         fontsize=12,
         ha="left",
         va="center",
+        
+        color = c,
     )
     ct = r["convective_top_height"][-1].values
     ax.axhline(
         ct,
         ax.transLimits.transform((221, float(ct)))[0],
         ax.transLimits.transform((221 + 9, float(ct)))[0],
-        color="k",
+        color=c,
         linestyle=":",
+        linewidth=1,
     )
     ax.annotate(
         r"$z_{\text{ct}}$",
@@ -296,8 +304,9 @@ for r in [gate, orcestra]:
         fontsize=12,
         ha="left",
         va="center",
+        color=c,
     )
-    """
+"""
 ax.set_ylabel("altitude / km")
 ax.set_xlabel("air temperature / K")
 for axis in ["top", "bottom", "left", "right"]:
@@ -305,7 +314,7 @@ for axis in ["top", "bottom", "left", "right"]:
 ax.tick_params(width=0.5, which="both")
 ax.set_yticks(yticks, labels=[f"{y / 1000:.1f}" for y in yticks])
 ax.set_xticks(xticks)
-
+ax.set_ylim(0, None)
 ax.legend()
 sns.despine(offset={"left": 10})
-fig.savefig("plots/moist_adiabat_ex_empty.pdf", bbox_inches="tight")
+fig.savefig("plots/moist_adiabat_ex_empty.pdf", transparent=True, bbox_inches="tight")
