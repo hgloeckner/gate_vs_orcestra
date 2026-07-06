@@ -115,7 +115,7 @@ mean_gate = (
 
 
 # change which rh is used here!
-gate_rh = mean_gate.rh.interpolate_na("ta")  # mean_orc.rh.interpolate_na("ta")
+gate_rh = mean_orc.rh.interpolate_na("ta")  # mean_orc.rh.interpolate_na("ta")
 mean_gate = mean_gate.assign(
     O3=ozone.o3.isel(temp_layer=slice(0, 180)).interp(
         temp_layer=mean_gate.ta, kwargs=dict(fill_value="extrapolate")
